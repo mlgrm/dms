@@ -3,12 +3,24 @@ set -e
 
 export USER_NAME=${USER_NAME:-dimas}
 export DMS_HOME=${DMS_HOME:-/home/dimas}
+
+# format and mount data disks
+mkfs /dev/disks/by-label/home && \
+	mount /dev/disks/by-label/home /home
+mkfs /dev/disks/by-label/docker && \
+	mount /dev/disks/by-label/docker /var/lib/docker
+cat >> /etc/fstab <<EOFSTAB
+/dev/sdc1       /home   ext4    defaults        0 0
+/dev/sdb1       /var/lib/docker ext4    defaults        0 0
+EOFSTAB
+
+# create default user and home direcory
 useradd -U -m ${USER_NAME}
 mkdir ${DMS_HOME}
 chown ${USER_NAME}:${USER_NAME} ${DMS_HOME}
 
+# update and install necessary packages
 apt-get update && apt-get upgrade -y
-
 apt-get install -y docker curl wget git
 useradd -G docker ${USER_NAME}
 
@@ -16,14 +28,21 @@ useradd -G docker ${USER_NAME}
 sudo curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 
+# all further commands are performed as default user
 su ${USER_NAME}
 cd ${DMS_HOME}
+
+# get the reverse proxy setup
 git clone https://github.com/evertramos/docker-compose-letsencrypt-nginx-proxy-companion.git
 ln -s docker-compose-letsencrypt-nginx-proxy-companion/ proxy
+
+# learn our external ip for proxy setup
 export $IP_ADDR=$(curl ipinfo.io/ip)
 
+# initialise the environment files
 cp proxy/.env.sample proxy/.env
 
+# modify .env for our setup
 patch proxy/.env << EO_DIFF
 19c19
 < IP=0.0.0.0
@@ -53,6 +72,7 @@ patch proxy/.env << EO_DIFF
 > NGINX_LETSENCRYPT_LOG_MAX_FILE=10
 EO_DIFF
 
+# create our docker compose config
 docker-compose.yml <<EO_DOCKER_COMPOSE
 version: "3"
 
@@ -188,6 +208,7 @@ volumes:
 EO_DOCKER_COMPOSE
 
 cd proxy/
+chmod +x start.sh
 ./start.sh
 
 docker exec dms_superset_1 superset_demo
