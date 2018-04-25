@@ -72,7 +72,7 @@ curl https://raw.githubusercontent.com/mlgrm/dms/master/proxy/.env.diff | \
 	patch proxy/.env
 
 # create our docker compose config
-wget -0 ../docker-compose.yml $CONF_URL/docker-compose.yml
+wget -O ../docker-compose.yml $CONF_URL/docker-compose.yml
 
 mkdir -p superset/data
 wget $CONF_URL/superset/superset_config.py 
