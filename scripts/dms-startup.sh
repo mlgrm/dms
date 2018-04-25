@@ -6,6 +6,10 @@ export USER_NAME=${USER_NAME:-dimas}
 export DMS_HOME=${DMS_HOME:-/home/dimas}
 export CONF_URL=${CONF_URL:-"https://raw.githubusercontent.com/mlgrm/dms/master/"}
 
+# update and install necessary packages
+apt-get update && apt-get upgrade -y
+apt-get install -y docker.io curl wget git apg
+
 # format and mount data disks
 sfdisk /dev/disk/by-id/google-home <<EOFDISK
 label: dos
@@ -33,10 +37,6 @@ cat >> /etc/fstab <<EOFSTAB
 /dev/disk/by-id/google-home-part1       /home   ext4    defaults        0 0
 /dev/disk/by-id/google-docker-part1       /var/lib/docker ext4    defaults        0 0
 EOFSTAB
-
-# update and install necessary packages
-apt-get update && apt-get upgrade -y
-apt-get install -y docker.io curl wget git apg
 
 # get environment variables from the metadata server
 ENVFILE=$(mktemp "${TMPDIR:-/tmp/}$(basename $0).XXXXXXXXXXXX")
