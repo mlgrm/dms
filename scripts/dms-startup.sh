@@ -29,7 +29,7 @@ EOFDISK
 
 sfdisk /dev/disk/by-id/google-docker <<EOFDISK
 label: dos
-label-id: 0xadbd6c09
+label-id: 0xadbd6c08
 device: /dev/sdc
 unit: sectors
 
