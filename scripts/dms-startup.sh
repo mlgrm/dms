@@ -2,6 +2,13 @@
 set -e
 set -x
 
+# retrieve and execute local .env file
+curl -f http://metadata.google.internal/computeMetadata/v1/instance/attributes/env -H "Metadata-Flavor: Google" > .env
+
+set -a
+. .env
+set +a
+
 export USER_NAME=${USER_NAME:-dimas}
 export DMS_HOME=${DMS_HOME:-/home/dimas}
 export CONF_URL=${CONF_URL:-"https://raw.githubusercontent.com/mlgrm/dms/master/"}
@@ -37,14 +44,6 @@ cat >> /etc/fstab <<EOFSTAB
 /dev/disk/by-id/google-home-part1       /home   ext4    defaults        0 0
 /dev/disk/by-id/google-docker-part1       /var/lib/docker ext4    defaults        0 0
 EOFSTAB
-
-# get environment variables from the metadata server
-ENVFILE=$(mktemp "${TMPDIR:-/tmp/}$(basename $0).XXXXXXXXXXXX")
-wget -O $ENVFILE http://metadata.google.internal/computeMetadata/v1/instance/attributes/env
-set -a
-source $ENVFILE
-set +a
-rm env
 
 # create default user and home direcory
 useradd -U ${USER_NAME}

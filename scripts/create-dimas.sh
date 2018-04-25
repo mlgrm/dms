@@ -1,37 +1,38 @@
 #/bin/bash
 set -e
 
+
+# clean up
+if gcloud compute instances list | grep "$1"; then 
+gcloud compute instances delete "$1"
+fi
+if gcloud compute disks list | grep "$1-home"; then
+gcloud compute disks delete "$1-home"
+fi
+if gcloud compute disks list | grep "$1-docker"; then 
+gcloud compute disks delete "$1-docker"
+fi
+
+# blank disk for docker images
+gcloud compute disks create "$1"-docker \
+        --size=200GB \
+        --verbosity=info
+# blank disk for home directory and local data
+gcloud compute disks create "$1"-home \
+        --size=200GB \
+        --verbosity=info
 # ubuntu 16.04 base instance
 gcloud compute instances create "$1" \
 	--image-project=ubuntu-os-cloud \
 	--image-family=ubuntu-1604-lts \
 	--boot-disk-type pd-ssd \
+	--disk=auto-delete=yes,device-name=home,name="$1-home" \
+	--disk=auto-delete=yes,device-name=docker,name="$1-docker" \
 	--can-ip-forward \
 	--address=${DMS_EXTERNAL_IP:-dms} \
-	--metadata=startup-script-url=${startup-url:-https://raw.githubusercontent.com/mlgrm/dms/master/scripts/dms-startup.sh} \
-	--verbosity=info
-# blank disk for docker images
-gcloud compute disks create "$1"-docker \
-        --image=doc-docker-virgin \
-        --verbosity=info
-# blank disk for home directory and local data
-gcloud compute disks create "$1"-home \
-        --image=doc-home-virgin \
-        --verbosity=info
-gcloud compute instances attach-disk "$1" \
-        --disk="$1"-docker \
-	--device-name="docker" \
-        --verbosity=info
-gcloud compute instances set-disk-auto-delete "$1" \
-        --disk="$1"-docker \
-        --verbosity=info
-gcloud compute instances attach-disk "$1" \
-        --disk="$1"-home \
-	--device-name="home"
-        --verbosity=info
-gcloud compute instances set-disk-auto-delete "$1" \
-        --disk="$1"-home \
-        --verbosity=info
+	--verbosity=info \
+	--metadata-from-file env=../.env \
+	--metadata startup-script-url=${STARTUP_SCRIPT:-"https://raw.githubusercontent.com/mlgrm/dms/master/scripts/dms-startup.sh"},env=${ENV_FILE:-../.env}
 gcloud compute instances add-tags "$1" --tags http,https
 gcloud compute config-ssh \
 	--verbosity=info
