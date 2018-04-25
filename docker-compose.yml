@@ -45,7 +45,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASS}
       POSTGRES_USER: superset
     volumes:
-      - ./postgresql-data:/var/lib/postgresql/data
+      - ./postgres/data:/var/lib/postgresql/data
     networks:
       - webproxy
       - privatenet
@@ -58,7 +58,7 @@ services:
       UID: 1000
       GID: 1000
     volumes:
-      - ./pgadmin-data:/data/chorss/docker-pgadmin4
+      - ./pgadmin/data:/data/chorss/docker-pgadmin4
     networks:
       - webproxy
       - privatenet
