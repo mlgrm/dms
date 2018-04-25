@@ -1,35 +1,43 @@
 #!/bin/bash
 set -e
+set -x
 
 export USER_NAME=${USER_NAME:-dimas}
 export DMS_HOME=${DMS_HOME:-/home/dimas}
+export CONF_URL=${CONF_URL:-"https://raw.githubusercontent.com/mlgrm/dms/master/"}
 
 # format and mount data disks
-mkfs /dev/disks/by-label/home && \
-	mount /dev/disks/by-label/home /home
-mkfs /dev/disks/by-label/docker && \
-	mount /dev/disks/by-label/docker /var/lib/docker
+mkfs /dev/disk/by-id/google-home-part1 && \
+	mount /dev/disk/by-id/google-home-part1 /home
+mkfs /dev/disk/by-label/google-docker-part1 && \
+	mount /dev/disk/by-id/google-docker-part1 /var/lib/docker
 cat >> /etc/fstab <<EOFSTAB
-/dev/sdc1       /home   ext4    defaults        0 0
-/dev/sdb1       /var/lib/docker ext4    defaults        0 0
+/dev/disk/by-id/google-home-part1       /home   ext4    defaults        0 0
+/dev/disk/by-id/google-docker-part1       /var/lib/docker ext4    defaults        0 0
 EOFSTAB
-
-# create default user and home direcory
-useradd -U -m ${USER_NAME}
-mkdir ${DMS_HOME}
-chown ${USER_NAME}:${USER_NAME} ${DMS_HOME}
 
 # update and install necessary packages
 apt-get update && apt-get upgrade -y
-apt-get install -y docker curl wget git
-useradd -G docker ${USER_NAME}
+apt-get install -y docker.io curl wget git apg
+
+# get environment variables from the metadata server
+ENVFILE=$(mktemp "${TMPDIR:-/tmp/}$(basename $0).XXXXXXXXXXXX")
+wget -O $ENVFILE http://metadata.google.internal/computeMetadata/v1/instance/attributes/env
+set -a
+source $ENVFILE
+set +a
+rm env
+
+# create default user and home direcory
+useradd -U ${USER_NAME}
+mkdir ${DMS_HOME}
+chown ${USER_NAME}:${USER_NAME} ${DMS_HOME}
+usermod -a -G docker ${USER_NAME}
 
 # install docker compose
 sudo curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 
-# all further commands are performed as default user
-su ${USER_NAME}
 cd ${DMS_HOME}
 
 # get the reverse proxy setup
@@ -37,179 +45,31 @@ git clone https://github.com/evertramos/docker-compose-letsencrypt-nginx-proxy-c
 ln -s docker-compose-letsencrypt-nginx-proxy-companion/ proxy
 
 # learn our external ip for proxy setup
-export $IP_ADDR=$(curl ipinfo.io/ip)
+export IP_ADDR=$(curl ipinfo.io/ip)
 
 # initialise the environment files
 cp proxy/.env.sample proxy/.env
 
 # modify .env for our setup
-patch proxy/.env << EO_DIFF
-19c19
-< IP=0.0.0.0
----
-> IP=${IP_ADDR}
-41c41
-< NGINX_FILES_PATH=/path/to/your/nginx/data
----
-> NGINX_FILES_PATH=${HOME}/proxy/data/
-69,70c69,70
-< #NGINX_WEB_LOG_MAX_SIZE=4m
-< #NGINX_WEB_LOG_MAX_FILE=10
----
-> NGINX_WEB_LOG_MAX_SIZE=4m
-> NGINX_WEB_LOG_MAX_FILE=10
-72,73c72,73
-< #NGINX_GEN_LOG_MAX_SIZE=2m
-< #NGINX_GEN_LOG_MAX_FILE=10
----
-> NGINX_GEN_LOG_MAX_SIZE=2m
-> NGINX_GEN_LOG_MAX_FILE=10
-75,76c75,76
-< #NGINX_LETSENCRYPT_LOG_MAX_SIZE=2m
-< #NGINX_LETSENCRYPT_LOG_MAX_FILE=10
----
-> NGINX_LETSENCRYPT_LOG_MAX_SIZE=2m
-> NGINX_LETSENCRYPT_LOG_MAX_FILE=10
-EO_DIFF
+curl https://raw.githubusercontent.com/mlgrm/dms/master/proxy/.env.diff | \
+	patch proxy/.env
 
 # create our docker compose config
-docker-compose.yml <<EO_DOCKER_COMPOSE
-version: "3"
+wget -0 ../docker-compose.yml $CONF_URL/docker-compose.yml
 
-  superset:
-    image: mlgrm/dms-superset
-    restart: always
-    ports:
-      - "8088"
-    volumes: # these need to be owned by uid 1000
-      - ./superset_config.py:/etc/superset/superset_config.py
-      - ./superset_lib/:/var/lib/superset/
-    networks:
-      - webproxy
-      - privatenet
-    environment:
-      MAPBOX_API_KEY: ${MAPBOX_API_KEY}
-      VIRTUAL_HOST: dimas.bigend.org
-      LETSENCRYPT_EMAIL: joshua@bigend.io
-      LETSENCRYPT_HOST: "dimas.bigend.org"
-      CERT_NAME: dimas.bigend.org
-      VIRTUAL_PORT: 8088
-    depends_on:
-      - redis
-      - postgres
-    links:
-      - postgres:postgres
-      - redis:redis
+mkdir -p superset/data
+wget $CONF_URL/superset/superset_config.py 
+mv superset_config.py superset/
 
-  redis:
-    image: redis
-    restart: always
-    ports:
-      - "6379"
-    volumes:
-      - redis:/data
-    networks:
-      - privatenet
-  
-  postgres:
-    image: library/postgres
-    restart: always
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: superset
-      POSTGRES_PASSWORD: Eilteirtus2
-      POSTGRES_USER: superset
-    volumes:
-      - ./postgresql-data:/var/lib/postgresql/data
-    networks:
-      - webproxy
-      - privatenet
-
-  pgadmin:
-    image: chorss/docker-pgadmin4
-    ports:
-      - "5050:5050"
-    environment:
-      UID: 1000
-      GID: 1000
-    volumes:
-      - ./pgadmin-data:/data/chorss/docker-pgadmin4
-    networks:
-      - webproxy
-      - privatenet
-
-  nginx-web:
-    image: nginx
-    labels:
-        com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: "true"
-    container_name: ${NGINX_WEB:-nginx-web}
-    restart: always
-    ports:
-      - "${IP:-0.0.0.0}:80:80"
-      - "${IP:-0.0.0.0}:443:443"
-    volumes:
-      - ${NGINX_FILES_PATH:-./data}/conf.d:/etc/nginx/conf.d
-      - ${NGINX_FILES_PATH:-./data}/vhost.d:/etc/nginx/vhost.d
-      - ${NGINX_FILES_PATH:-./data}/html:/usr/share/nginx/html
-      - ${NGINX_FILES_PATH:-./data}/certs:/etc/nginx/certs:ro
-      - ${NGINX_FILES_PATH:-./data}/htpasswd:/etc/nginx/htpasswd:ro
-    logging:
-      options:
-        max-size: ${NGINX_WEB_LOG_MAX_SIZE:-4m}
-        max-file: ${NGINX_WEB_LOG_MAX_FILE:-10}
-
-  nginx-gen:
-    image: jwilder/docker-gen
-    command: -notify-sighup ${NGINX_WEB:-nginx-web} -watch -wait 5s:30s /etc/docker-gen/templates/nginx.tmpl /etc/nginx/conf.d/default.conf
-    container_name: ${DOCKER_GEN:-nginx-gen}
-    restart: always
-    volumes:
-      - ${NGINX_FILES_PATH:-./data}/conf.d:/etc/nginx/conf.d
-      - ${NGINX_FILES_PATH:-./data}/vhost.d:/etc/nginx/vhost.d
-      - ${NGINX_FILES_PATH:-./data}/html:/usr/share/nginx/html
-      - ${NGINX_FILES_PATH:-./data}/certs:/etc/nginx/certs:ro
-      - ${NGINX_FILES_PATH:-./data}/htpasswd:/etc/nginx/htpasswd:ro
-      - /var/run/docker.sock:/tmp/docker.sock:ro
-      - ./nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro
-    logging:
-      options:
-        max-size: ${NGINX_GEN_LOG_MAX_SIZE:-2m}
-        max-file: ${NGINX_GEN_LOG_MAX_FILE:-10}
-
-  nginx-letsencrypt:
-    image: jrcs/letsencrypt-nginx-proxy-companion
-    container_name: ${LETS_ENCRYPT:-nginx-letsencrypt}
-    restart: always
-    volumes:
-      - ${NGINX_FILES_PATH:-./data}/conf.d:/etc/nginx/conf.d
-      - ${NGINX_FILES_PATH:-./data}/vhost.d:/etc/nginx/vhost.d
-      - ${NGINX_FILES_PATH:-./data}/html:/usr/share/nginx/html
-      - ${NGINX_FILES_PATH:-./data}/certs:/etc/nginx/certs:rw
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    environment:
-      NGINX_DOCKER_GEN_CONTAINER: ${DOCKER_GEN:-nginx-gen}
-      NGINX_PROXY_CONTAINER: ${NGINX_WEB:-nginx-web}
-    logging:
-      options:
-        max-size: ${NGINX_LETSENCRYPT_LOG_MAX_SIZE:-2m}
-        max-file: ${NGINX_LETSENCRYPT_LOG_MAX_FILE:-10}
-
-networks:
-  default:
-    external:
-      name: ${NETWORK:-webproxy}
-  privatenet:
-
-volumes:
-  redis:
-    external: false
-
-EO_DOCKER_COMPOSE
+mkdir -p pgadmin/data
+mkdir -p pgadmin/data
+mkdir -p nginx/data
 
 cd proxy/
 chmod +x start.sh
-./start.sh
+chown -R ${USER_NAME}:${USER_NAME} ${DMS_HOME}
 
-docker exec dms_superset_1 superset_demo
+sudo -u ${USER_NAME} -H bash -c "./start.sh"
+
+sudo -u ${USER_NAME} -H bash -c "docker exec dimas_superset_1 superset_demo"
 
