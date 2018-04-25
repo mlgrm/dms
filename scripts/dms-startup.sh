@@ -15,7 +15,7 @@ export CONF_URL=${CONF_URL:-"https://raw.githubusercontent.com/mlgrm/dms/master/
 
 # update and install necessary packages
 apt-get update && apt-get upgrade -y
-apt-get install -y docker.io curl wget git apg
+apt-get install -y docker.io curl wget git apg gce-compute-image-packages
 
 # format and mount data disks
 sfdisk /dev/disk/by-id/google-home <<EOFDISK
