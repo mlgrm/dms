@@ -30,10 +30,10 @@ EOFDISK
 sfdisk /dev/disk/by-id/google-docker <<EOFDISK
 label: dos
 label-id: 0xadbd6c09
-device: /dev/sdb
+device: /dev/sdc
 unit: sectors
 
-/dev/sdb1 : start=        2048, size=   419428352, type=83
+/dev/sdc1 : start=        2048, size=   419428352, type=83
 EOFDISK
 
 mkfs.ext4 /dev/disk/by-id/google-home-part1 && \
