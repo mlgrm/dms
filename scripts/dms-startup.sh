@@ -7,9 +7,27 @@ export DMS_HOME=${DMS_HOME:-/home/dimas}
 export CONF_URL=${CONF_URL:-"https://raw.githubusercontent.com/mlgrm/dms/master/"}
 
 # format and mount data disks
-mkfs /dev/disk/by-id/google-home-part1 && \
+sfdisk /dev/disk/by-id/google-home <<EOFDISK
+label: dos
+label-id: 0xadbd6c09
+device: /dev/sdb
+unit: sectors
+
+/dev/sdb1 : start=        2048, size=   419428352, type=83
+EOFDISK
+
+sfdisk /dev/disk/by-id/google-docker <<EOFDISK
+label: dos
+label-id: 0xadbd6c09
+device: /dev/sdb
+unit: sectors
+
+/dev/sdb1 : start=        2048, size=   419428352, type=83
+EOFDISK
+
+mkfs.ext4 /dev/disk/by-id/google-home-part1 && \
 	mount /dev/disk/by-id/google-home-part1 /home
-mkfs /dev/disk/by-label/google-docker-part1 && \
+mkfs.ext4 /dev/disk/by-id/google-docker-part1 && \
 	mount /dev/disk/by-id/google-docker-part1 /var/lib/docker
 cat >> /etc/fstab <<EOFSTAB
 /dev/disk/by-id/google-home-part1       /home   ext4    defaults        0 0
