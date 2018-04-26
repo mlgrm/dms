@@ -20,20 +20,20 @@ apt-get install -y docker.io curl wget git apg gce-compute-image-packages
 # format and mount data disks
 sfdisk /dev/disk/by-id/google-home <<EOFDISK
 label: dos
-label-id: 0xadbd6c09
-device: /dev/sdb
+label-id: 0xd341d41b
+device: /dev/disk/by-id/google-home
 unit: sectors
 
-/dev/sdb1 : start=        2048, size=   419428352, type=83
+/dev/disk/by-id/google-home-part1 : start=        2048, size=   419428352, type=83
 EOFDISK
 
 sfdisk /dev/disk/by-id/google-docker <<EOFDISK
 label: dos
-label-id: 0xadbd6c08
-device: /dev/sdc
+label-id: 0x2e52db8b
+device: /dev/disk/by-id/google-docker
 unit: sectors
 
-/dev/sdc1 : start=        2048, size=   419428352, type=83
+/dev/disk/by-id/google-docker-part1 : start=        2048, size=   419428352, type=83
 EOFDISK
 
 mkfs.ext4 /dev/disk/by-id/google-home-part1 && \
@@ -72,20 +72,19 @@ curl https://raw.githubusercontent.com/mlgrm/dms/master/proxy/.env.diff | \
 	patch proxy/.env
 
 # create our docker compose config
-wget -O ../docker-compose.yml $CONF_URL/docker-compose.yml
+wget $CONF_URL/docker-compose.yml
 
 mkdir -p superset/data
 wget $CONF_URL/superset/superset_config.py 
 mv superset_config.py superset/
 
 mkdir -p pgadmin/data
-mkdir -p pgadmin/data
-mkdir -p nginx/data
+mkdir -p postgres/data
+mkdir -p proxy/data
 
 cd proxy/
 chmod +x start.sh
 chown -R ${USER_NAME}:${USER_NAME} ${DMS_HOME}
-
 sudo -u ${USER_NAME} -H bash -c "./start.sh"
 
 sudo -u ${USER_NAME} -H bash -c "docker exec dimas_superset_1 superset_demo"
