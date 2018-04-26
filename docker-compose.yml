@@ -9,7 +9,7 @@ services:
       - ./superset/superset_config.py:/etc/superset/superset_config.py
       - ./superset/data/:/var/lib/superset/
     networks:
-      - webproxy
+      - default
       - privatenet
     environment:
       MAPBOX_API_KEY: ${MAPBOX_API_KEY}
@@ -47,7 +47,7 @@ services:
     volumes:
       - ./postgres/data:/var/lib/postgresql/data
     networks:
-      - webproxy
+      - default
       - privatenet
 
   pgadmin:
@@ -60,7 +60,7 @@ services:
     volumes:
       - ./pgadmin/data:/data/chorss/docker-pgadmin4
     networks:
-      - webproxy
+      - default
       - privatenet
 
   nginx-web:
