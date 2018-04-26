@@ -88,7 +88,7 @@ rm proxy/docker-compose.yml
 cd proxy/
 chmod +x start.sh
 chown -R ${USER_NAME}:${USER_NAME} ${DMS_HOME}
-sudo -u ${USER_NAME} -H bash -c "./start.sh"
+sudo -E -u ${USER_NAME} -H bash -c "./start.sh"
 
-sudo -u ${USER_NAME} -H bash -c "docker exec dimas_superset_1 superset_demo"
+sudo -E -u ${USER_NAME} -H bash -c "docker exec dimas_superset_1 superset_demo"
 
