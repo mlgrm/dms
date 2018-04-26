@@ -36,6 +36,10 @@ unit: sectors
 /dev/disk/by-id/google-docker-part1 : start=        2048, size=   419428352, type=83
 EOFDISK
 
+# looks like links are created asynchronously.
+# give the system time to catch up.
+sleep 5
+
 mkfs.ext4 /dev/disk/by-id/google-home-part1 && \
 	mount /dev/disk/by-id/google-home-part1 /home
 mkfs.ext4 /dev/disk/by-id/google-docker-part1 && \
@@ -65,11 +69,7 @@ ln -s docker-compose-letsencrypt-nginx-proxy-companion/ proxy
 export IP_ADDR=$(curl ipinfo.io/ip)
 
 # initialise the environment files
-cp proxy/.env.sample proxy/.env
-
-# modify .env for our setup
-curl https://raw.githubusercontent.com/mlgrm/dms/master/proxy/.env.diff | \
-	patch proxy/.env
+curl -f http://metadata.google.internal/computeMetadata/v1/instance/attributes/proxy_env -H "Metadata-Flavor: Google" > proxy/.env
 
 # create our docker compose config
 wget $CONF_URL/docker-compose.yml
@@ -81,6 +81,9 @@ mv superset_config.py superset/
 mkdir -p pgadmin/data
 mkdir -p postgres/data
 mkdir -p proxy/data
+
+# remove their config so docker compose uses ours
+rm proxy/docker-compose.yml
 
 cd proxy/
 chmod +x start.sh
