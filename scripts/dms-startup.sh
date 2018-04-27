@@ -58,7 +58,7 @@ cd ${DMS_HOME}
 # evertramos/docker-compose-letsencrypt-nginx-proxy-companion from 2018.04.26
 # in the proxy directory until i find a clever way of downloading and 
 # configuring it live
-git clone git@github.com:mlgrm/dms.git
+git clone https://github.com/mlgrm/dms.git
 
 cd dms
 
