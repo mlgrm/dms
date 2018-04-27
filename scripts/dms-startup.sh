@@ -29,10 +29,15 @@ EOFDISK
 # give the system time to catch up.
 sleep 5
 
-mkfs.ext4 /dev/disk/by-id/google-home-part1 && \
-	mount /dev/disk/by-id/google-home-part1 /home
-mkfs.ext4 /dev/disk/by-id/google-docker-part1 && \
-	mount /dev/disk/by-id/google-docker-part1 /var/lib/docker
+# format, prepare and mount partitions
+mkfs.ext4 /dev/disk/by-id/google-home-part1
+mount /dev/disk/by-id/google-home-part1 /mnt
+tar c -C /home . | tar x -C /mnt
+umount /mnt
+mount /dev/disk/by-id/google-home-part1 /home
+mkfs.ext4 /dev/disk/by-id/google-docker-part1
+mkdir /var/lib/docker
+mount /dev/disk/by-id/google-docker-part1 /var/lib/docker
 cat >> /etc/fstab <<EOFSTAB
 /dev/disk/by-id/google-home-part1       /home   ext4    defaults        0 0
 /dev/disk/by-id/google-docker-part1       /var/lib/docker ext4    defaults        0 0
