@@ -2,12 +2,6 @@
 set -e
 set -x
 
-
-
-set -a
-. .env
-set +a
-
 export USER_NAME=${USER_NAME:-dimas}
 export DMS_HOME=${DMS_HOME:-/home/dimas}
 export CONF_URL=${CONF_URL:-"https://raw.githubusercontent.com/mlgrm/dms/master/"}
