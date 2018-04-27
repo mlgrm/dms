@@ -6,23 +6,6 @@ export USER_NAME=${USER_NAME:-dimas}
 export DMS_HOME=${DMS_HOME:-/home/dimas}
 export CONF_URL=${CONF_URL:-"https://raw.githubusercontent.com/mlgrm/dms/master/"}
 
-# update and install necessary packages
-apt-get update && apt-get upgrade -y
-apt-get install -y \
-    curl wget git apg gce-compute-image-packages \
-    apt-transport-https \
-    ca-certificates \
-    software-properties-common
-
-# install docker from the official repository
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-add-apt-repository \
-   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-   $(lsb_release -cs) \
-   stable"
-apt-get update
-apt-get install -y docker-ce
-
 # format and mount data disks
 sfdisk /dev/disk/by-id/google-home <<EOFDISK
 label: dos
@@ -60,6 +43,23 @@ useradd -U ${USER_NAME}
 mkdir ${DMS_HOME}
 chown ${USER_NAME}:${USER_NAME} ${DMS_HOME}
 usermod -a -G docker ${USER_NAME}
+
+# update and install necessary packages
+apt-get update && apt-get upgrade -y
+apt-get install -y \
+    curl wget git apg gce-compute-image-packages \
+    apt-transport-https \
+    ca-certificates \
+    software-properties-common
+
+# install docker from the official repository
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+apt-get update
+apt-get install -y docker-ce
 
 # install docker compose
 sudo curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
@@ -100,5 +100,5 @@ cd ..
 sudo -E -u $USER_NAME -H bash -c "docker-compose up -d"
 
 # and install the demo data just for fun
-sudo -E -u ${USER_NAME} -H bash -c "docker exec dimas_superset_1 superset_demo"
+sudo -E -u ${USER_NAME} -H bash -c "docker exec dms_superset_1 superset_demo"
 
