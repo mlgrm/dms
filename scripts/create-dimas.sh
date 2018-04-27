@@ -31,7 +31,7 @@ gcloud compute instances create "$1" \
 	--can-ip-forward \
 	--address=${DMS_EXTERNAL_IP:-dms} \
 	--verbosity=info \
-	--metadata-from-file env=../.env \
+	--metadata-from-file env=../.env,proxy_env=../proxy/.env \
 	--metadata startup-script-url=${STARTUP_SCRIPT:-"https://raw.githubusercontent.com/mlgrm/dms/master/scripts/dms-startup.sh"}
 gcloud compute instances add-tags "$1" --tags http,https
 gcloud compute config-ssh \
