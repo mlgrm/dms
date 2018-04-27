@@ -43,12 +43,6 @@ cat >> /etc/fstab <<EOFSTAB
 /dev/disk/by-id/google-docker-part1       /var/lib/docker ext4    defaults        0 0
 EOFSTAB
 
-# create default user and home direcory
-useradd -U ${USER_NAME}
-mkdir ${DMS_HOME}
-chown ${USER_NAME}:${USER_NAME} ${DMS_HOME}
-usermod -a -G docker ${USER_NAME}
-
 # update and install necessary packages
 apt-get update && apt-get upgrade -y
 apt-get install -y \
@@ -69,6 +63,12 @@ apt-get install -y docker-ce
 # install docker compose
 sudo curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
+
+# create default user and home direcory
+useradd -U ${USER_NAME}
+mkdir ${DMS_HOME}
+chown ${USER_NAME}:${USER_NAME} ${DMS_HOME}
+usermod -a -G docker ${USER_NAME}
 
 cd ${DMS_HOME}
 
