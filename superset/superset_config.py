@@ -36,7 +36,7 @@ SECRET_KEY = os.getenv('SECRET_KEY','')
 # you want to explore are managed directly in the web UI
 SQLALCHEMY_DATABASE_URI = \
     "postgresql+psycopg2://superset:%s@postgres:5432/superset" % \
-	os.getenv('POSTGRES_PASS','')
+	os.getenv('POSTGRES_PASSWORD','')
 
 # Flask-WTF flag for CSRF
 WTF_CSRF_ENABLED = True

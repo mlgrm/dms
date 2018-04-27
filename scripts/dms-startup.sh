@@ -2,8 +2,7 @@
 set -e
 set -x
 
-# retrieve and execute local .env file
-curl -f http://metadata.google.internal/computeMetadata/v1/instance/attributes/env -H "Metadata-Flavor: Google" > .env
+
 
 set -a
 . .env
@@ -61,30 +60,38 @@ sudo chmod +x /usr/local/bin/docker-compose
 
 cd ${DMS_HOME}
 
-# get the reverse proxy setup
-git clone https://github.com/evertramos/docker-compose-letsencrypt-nginx-proxy-companion.git
-ln -s docker-compose-letsencrypt-nginx-proxy-companion/ proxy
+# get our file structure.  this includes (for now) a static version of 
+# evertramos/docker-compose-letsencrypt-nginx-proxy-companion from 2018.04.26
+# in the proxy directory until i find a clever way of downloading and 
+# configuring it live
+git clone git@github.com:mlgrm/dms.git
 
-# learn our external ip for proxy setup
-export IP_ADDR=$(curl ipinfo.io/ip)
+cd dms
 
-# create our docker compose config
-wget $CONF_URL/docker-compose.yml
+# retrieve and execute local .env and proxy .env file.  these are stored on the
+# metadata server by the gcloud initiation script scripts/create-dimas.sh
+curl -f http://metadata.google.internal/computeMetadata/v1/instance/attributes/env -H "Metadata-Flavor: Google" > .env
+curl -f http://metadata.google.internal/computeMetadata/v1/instance/attributes/proxy_env -H "Metadata-Flavor: Google" > proxy/.env
 
-mkdir -p superset/data
-wget $CONF_URL/superset/superset_config.py 
-mv superset_config.py superset/
+# this is a cludge to get the proxy config to recognise the ip address
+# without it being hard-coded in the .env files.  .env in docker-compose 
+# does not appear to resolve variables.
+IP_ADDR=$(curl http://ipinfo.io/ip)
+echo "IP=$IP_ADDR" >> proxy/.env
 
-mkdir -p pgadmin/data
-mkdir -p postgres/data
-mkdir -p proxy/data
+# make sure the user owns everything except superset, which runs as user 1000
+chown -R $USER_NAME:$USER_NAME $DMS_HOME
+chown -R 1000:1000 $DMS_HOME/dms/superset
 
-# remove their config so start.sh and docker-compose use ours
-rm proxy/docker-compose.yml
-
-cd proxy/
-chmod +x start.sh
-chown -R ${USER_NAME}:${USER_NAME} ${DMS_HOME}
+# first run the proxy's start script, which invokes docker-compose in the 
+# proxy directory
+cd proxy
 sudo -E -u ${USER_NAME} -H bash -c "./start.sh"
+
+# now run our dms system behind the reverse proxy
+cd ..
+sudo -E -u $USER_NAME -H bash -c "docker-compose up -d"
+
+# and install the demo data just for fun
 sudo -E -u ${USER_NAME} -H bash -c "docker exec dimas_superset_1 superset_demo"
 
