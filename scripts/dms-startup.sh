@@ -68,9 +68,6 @@ ln -s docker-compose-letsencrypt-nginx-proxy-companion/ proxy
 # learn our external ip for proxy setup
 export IP_ADDR=$(curl ipinfo.io/ip)
 
-# initialise the environment files
-curl -f http://metadata.google.internal/computeMetadata/v1/instance/attributes/proxy_env -H "Metadata-Flavor: Google" > proxy/.env
-
 # create our docker compose config
 wget $CONF_URL/docker-compose.yml
 
@@ -82,13 +79,12 @@ mkdir -p pgadmin/data
 mkdir -p postgres/data
 mkdir -p proxy/data
 
-# remove their config so docker compose uses ours
+# remove their config so start.sh and docker-compose use ours
 rm proxy/docker-compose.yml
 
 cd proxy/
 chmod +x start.sh
 chown -R ${USER_NAME}:${USER_NAME} ${DMS_HOME}
 sudo -E -u ${USER_NAME} -H bash -c "./start.sh"
-
 sudo -E -u ${USER_NAME} -H bash -c "docker exec dimas_superset_1 superset_demo"
 

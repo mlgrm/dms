@@ -1,5 +1,26 @@
 version: "3"
 services:
+#  ocpu:
+#    restart: on-failure
+#    image: dms-ocpu
+#    ports:
+#      - "8787"
+#    hostname: ocpu
+#    #command: apachectl -DFOREGROUND
+#    networks:
+#      - webproxy
+#      - privatenet
+#    volumes:
+#      - ./rstudio.conf:/etc/apache2/sites-enabled/rstudio.conf
+#    environment:
+#      # VIRTUAL_PROTO: https
+#      VIRTUAL_HOST: dimas.bigend.org
+#      LETSENCRYPT_EMAIL: joshua@bigend.io
+#      LETSENCRYPT_HOST: "dimas.bigend.org"
+#      #HTTPS_METHOD: redirect
+#      CERT_NAME: dimas.bigend.org
+#      VIRTUAL_PORT: 80
+
   superset:
     image: mlgrm/dms-superset
     restart: always
@@ -13,10 +34,12 @@ services:
       - privatenet
     environment:
       MAPBOX_API_KEY: ${MAPBOX_API_KEY}
-      VIRTUAL_HOST: ${SUPERSET_DOMAIN}
-      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
-      LETSENCRYPT_HOST: ${SUPERSET_DOMAIN}
-      CERT_NAME: ${SUPERSET_DOMAIN}
+      VIRTUAL_HOST: $SS_VIRTUAL_HOST
+      LETSENCRYPT_EMAIL: $SS_LETSENCRYPT_EMAIL
+      LETSENCRYPT_HOST: $SS_LETSENCRYPT_HOST
+      POSTGRES_PASSWORD: $SS_POSTGRES_PASSWORD
+      #HTTPS_METHOD: redirect
+      CERT_NAME: $SS_CERT_NAME
       VIRTUAL_PORT: 8088
     depends_on:
       - redis
@@ -41,9 +64,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: superset
-      POSTGRES_PASSWORD: ${POSTGRES_PASS}
-      POSTGRES_USER: superset
+      POSTGRES_DB: $SS_POSTGRES_DB
+      POSTGRES_PASSWORD: $SS_POSTGRES_PASSWORD
+      POSTGRES_USER: $SS_POSTGRES_USER
     volumes:
       - ./postgres/data:/var/lib/postgresql/data
     networks:
@@ -63,69 +86,11 @@ services:
       - default
       - privatenet
 
-  nginx-web:
-    image: nginx
-    labels:
-        com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: "true"
-    container_name: ${NGINX_WEB:-nginx-web}
-    restart: always
-    ports:
-      - "${IP:-0.0.0.0}:80:80"
-      - "${IP:-0.0.0.0}:443:443"
-    volumes:
-      - ${NGINX_FILES_PATH:-./proxy/data}/conf.d:/etc/nginx/conf.d
-      - ${NGINX_FILES_PATH:-./proxy/data}/vhost.d:/etc/nginx/vhost.d
-      - ${NGINX_FILES_PATH:-./proxy/data}/html:/usr/share/nginx/html
-      - ${NGINX_FILES_PATH:-./proxy/data}/certs:/etc/nginx/certs:ro
-      - ${NGINX_FILES_PATH:-./proxy/data}/htpasswd:/etc/nginx/htpasswd:ro
-    logging:
-      options:
-        max-size: ${NGINX_WEB_LOG_MAX_SIZE:-4m}
-        max-file: ${NGINX_WEB_LOG_MAX_FILE:-10}
-
-  nginx-gen:
-    image: jwilder/docker-gen
-    command: -notify-sighup ${NGINX_WEB:-nginx-web} -watch -wait 5s:30s /etc/docker-gen/templates/nginx.tmpl /etc/nginx/conf.d/default.conf
-    container_name: ${DOCKER_GEN:-nginx-gen}
-    restart: always
-    volumes:
-      - ${NGINX_FILES_PATH:-./proxy/data}/conf.d:/etc/nginx/conf.d
-      - ${NGINX_FILES_PATH:-./proxy/data}/vhost.d:/etc/nginx/vhost.d
-      - ${NGINX_FILES_PATH:-./proxy/data}/html:/usr/share/nginx/html
-      - ${NGINX_FILES_PATH:-./proxy/data}/certs:/etc/nginx/certs:ro
-      - ${NGINX_FILES_PATH:-./proxy/data}/htpasswd:/etc/nginx/htpasswd:ro
-      - /var/run/docker.sock:/tmp/docker.sock:ro
-      - ./nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro
-    logging:
-      options:
-        max-size: ${NGINX_GEN_LOG_MAX_SIZE:-2m}
-        max-file: ${NGINX_GEN_LOG_MAX_FILE:-10}
-
-  nginx-letsencrypt:
-    image: jrcs/letsencrypt-nginx-proxy-companion
-    container_name: ${LETS_ENCRYPT:-nginx-letsencrypt}
-    restart: always
-    volumes:
-      - ${NGINX_FILES_PATH:-./proxy/data}/conf.d:/etc/nginx/conf.d
-      - ${NGINX_FILES_PATH:-./proxy/data}/vhost.d:/etc/nginx/vhost.d
-      - ${NGINX_FILES_PATH:-./proxy/data}/html:/usr/share/nginx/html
-      - ${NGINX_FILES_PATH:-./proxy/data}/certs:/etc/nginx/certs:rw
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    environment:
-      NGINX_DOCKER_GEN_CONTAINER: ${DOCKER_GEN:-nginx-gen}
-      NGINX_PROXY_CONTAINER: ${NGINX_WEB:-nginx-web}
-    logging:
-      options:
-        max-size: ${NGINX_LETSENCRYPT_LOG_MAX_SIZE:-2m}
-        max-file: ${NGINX_LETSENCRYPT_LOG_MAX_FILE:-10}
-
 networks:
-  default:
-    external:
-      name: ${NETWORK:-webproxy}
   privatenet:
-
+  webproxy:
+    external:
+      name: webproxy
 volumes:
   redis:
     external: false
-
