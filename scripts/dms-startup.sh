@@ -61,8 +61,8 @@ apt-get update
 apt-get install -y docker-ce
 
 # install docker compose
-sudo curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
 
 # create default user and home direcory
 useradd -U ${USER_NAME}
@@ -105,5 +105,6 @@ cd ..
 sudo -E -u $USER_NAME -H bash -c "docker-compose up -d"
 
 # and install the demo data just for fun
-sudo -E -u ${USER_NAME} -H bash -c "docker exec dms_superset_1 superset_demo"
+sudo -E -u ${USER_NAME} -H bash -c \
+	"docker exec -it dms_superset_1 'superset-init && superset-demo'"
 

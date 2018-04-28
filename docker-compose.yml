@@ -22,7 +22,7 @@ services:
 #      VIRTUAL_PORT: 80
 
   superset:
-    image: mlgrm/dms-superset
+    image: amancevice/superset
     restart: always
     ports:
       - "8088"
