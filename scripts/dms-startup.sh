@@ -2,8 +2,8 @@
 set -e
 set -x
 
-export USER_NAME=${USER_NAME:-dimas}
-export DMS_HOME=${DMS_HOME:-/home/dimas}
+export USER_NAME=${USER_NAME:-dms}
+export DMS_HOME=${DMS_HOME:-/home/dms}
 export CONF_URL=${CONF_URL:-"https://raw.githubusercontent.com/mlgrm/dms/master/"}
 
 # format and mount data disks
