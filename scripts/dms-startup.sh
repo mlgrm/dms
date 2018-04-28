@@ -65,7 +65,7 @@ curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compos
 chmod +x /usr/local/bin/docker-compose
 
 # create default user and home direcory
-useradd -U ${USER_NAME}
+useradd -U ${USER_NAME} -s "/bin/bash"
 mkdir ${DMS_HOME}
 chown ${USER_NAME}:${USER_NAME} ${DMS_HOME}
 usermod -a -G docker ${USER_NAME}
@@ -84,12 +84,6 @@ cd dms
 # metadata server by the gcloud initiation script scripts/create-dimas.sh
 curl -f http://metadata.google.internal/computeMetadata/v1/instance/attributes/env -H "Metadata-Flavor: Google" > .env
 curl -f http://metadata.google.internal/computeMetadata/v1/instance/attributes/proxy_env -H "Metadata-Flavor: Google" > proxy/.env
-
-# this is a cludge to get the proxy config to recognise the ip address
-# without it being hard-coded in the .env files.  .env in docker-compose 
-# does not appear to resolve variables.
-IP_ADDR=$(curl http://ipinfo.io/ip)
-echo "IP=$IP_ADDR" >> proxy/.env
 
 # make sure the user owns everything except superset, which runs as user 1000
 chown -R $USER_NAME:$USER_NAME $DMS_HOME
