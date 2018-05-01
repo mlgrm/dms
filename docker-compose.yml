@@ -31,7 +31,7 @@ services:
       - ./superset/data/:/var/lib/superset/
     networks:
       - default
-      - privatenet
+#     - privatenet
     environment:
       MAPBOX_API_KEY: ${MAPBOX_API_KEY}
       VIRTUAL_HOST: $SS_VIRTUAL_HOST
@@ -44,9 +44,9 @@ services:
     depends_on:
       - redis
       - postgres
-    links:
-      - postgres:postgres
-      - redis:redis
+#    links:
+#      - postgres:postgres
+#      - redis:redis
 
   redis:
     image: redis
@@ -56,7 +56,7 @@ services:
     volumes:
       - redis:/data
     networks:
-      - privatenet
+      - default
   
   postgres:
     image: library/postgres
@@ -72,7 +72,7 @@ services:
       - ./postgres/docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d/
     networks:
       - default
-      - privatenet
+#      - privatenet
 
   pgadmin:
     image: chorss/docker-pgadmin4
@@ -85,13 +85,13 @@ services:
       - ./pgadmin/data:/data/chorss/docker-pgadmin4
     networks:
       - default
-      - privatenet
+#      - privatenet
 
-networks:
-  privatenet:
-  webproxy:
-    external:
-      name: webproxy
+#networks:
+#  privatenet:
+#  webproxy:
+#    external:
+#      name: webproxy
 volumes:
   redis:
     external: false
