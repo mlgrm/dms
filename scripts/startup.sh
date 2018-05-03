@@ -92,13 +92,25 @@ chown -R 1000:1000 $DMS_HOME/dms/superset
 # first run the proxy's start script, which invokes docker-compose in the 
 # proxy directory
 cd proxy
-sudo -E -u ${USER_NAME} -H bash -c "./start.sh"
+sudo -E -u $USER_NAME -H bash -c "./start.sh"
+
+# set superset's secret key for encryption
+export SUPERSET_SECRET_KEY=$(apg -a 1 -n 1 -m 32 -E '\')
 
 # now run our dms system behind the reverse proxy
 cd ..
 sudo -E -u $USER_NAME -H bash -c "docker-compose up -d"
 
+echo "superset username: admin"
+export SUPERSET_ADMIN_PASSWORD=$(apg -n 1)
+echo "superset password: $SUPERSET_ADMIN_PASSWORD"
 # and install the demo data just for fun
-sudo -E -u ${USER_NAME} -H bash -c \
-	"docker exec -it dms_superset_1 'superset-init && superset-demo'"
+sudo -E -u $USER_NAME -H bash -c \
+	"docker exec dms_superset_1 superset-demo \
+		--username admin \
+		--firstname admin \
+  		--lastname admin \
+  		--email admin@example.com \
+  		--password $SUPERSET_ADMIN_PASSWORD"
+
 

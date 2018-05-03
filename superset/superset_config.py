@@ -27,7 +27,7 @@ SUPERSET_WEBSERVER_PORT = 8088
 # Flask App Builder configuration
 #---------------------------------------------------------
 # Your App secret key
-SECRET_KEY = os.getenv('SECRET_KEY','')
+SECRET_KEY = os.getenv('SUPERSET_SECRET_KEY','')
 
 # The SQLAlchemy connection string to your database backend
 # This connection defines the path to the database that stores your
