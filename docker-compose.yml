@@ -3,6 +3,7 @@ services:
   ocpu:
     restart: on-failure
     image: mlgrm/dms-ocpu
+    labels:
       traefik.enable: 'true'
       traefik.frontend.rule: "Host:$RSERVER_DOMAIN_NAME"
       traefik.port: '8080'
