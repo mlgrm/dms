@@ -1,52 +1,50 @@
 version: "3"
 services:
-#  ocpu:
-#    restart: on-failure
-#    image: dms-ocpu
-#    ports:
-#      - "8787"
-#    hostname: ocpu
-#    #command: apachectl -DFOREGROUND
-#    networks:
-#      - webproxy
-#      - privatenet
-#    volumes:
-#      - ./rstudio.conf:/etc/apache2/sites-enabled/rstudio.conf
-#    environment:
-#      # VIRTUAL_PROTO: https
-#      VIRTUAL_HOST: dimas.bigend.org
-#      LETSENCRYPT_EMAIL: joshua@bigend.io
-#      LETSENCRYPT_HOST: "dimas.bigend.org"
-#      #HTTPS_METHOD: redirect
-#      CERT_NAME: dimas.bigend.org
-#      VIRTUAL_PORT: 80
+  ocpu:
+    restart: on-failure
+    image: mlgrm/dms-ocpu
+      traefik.enable: 'true'
+      traefik.frontend.rule: "Host:$RSERVER_DOMAIN_NAME"
+      traefik.port: '8080'
+      traefik.docker.network: "proxynet"
+      traefik.frontend.entryPoints: "http,https"
+    ports:
+      - "8787"
+      - "8004"
+      
+    hostname: ocpu
+    #command: apachectl -DFOREGROUND
+    networks:
+      - webservices
+    volumes:
+      - ./rstudio.conf:/etc/apache2/sites-enabled/rstudio.conf
+    environment:
+      POSTGRES_PASSWORD: "$POSTGRES_PASSWORD"
 
   superset:
+    name: superset
     image: amancevice/superset
     restart: always
+    labels:
+      traefik.enable: 'true'
+      traefik.frontend.rule: "Host:$SUPERSET_DOMAIN_NAME"
+      traefik.port: '8080'
+      traefik.docker.network: "proxynet"
+      traefik.frontend.entryPoints: "http,https"
     ports:
       - "8088"
     volumes: # these need to be owned by uid 1000
       - ./superset/superset_config.py:/etc/superset/superset_config.py
       - ./superset/data/:/var/lib/superset/
     networks:
-      - default
-#     - privatenet
+      - webservices
     environment:
-      MAPBOX_API_KEY: ${MAPBOX_API_KEY}
-      VIRTUAL_HOST: $SS_VIRTUAL_HOST
-      LETSENCRYPT_EMAIL: $SS_LETSENCRYPT_EMAIL
-      LETSENCRYPT_HOST: $SS_LETSENCRYPT_HOST
-      POSTGRES_PASSWORD: $SS_POSTGRES_PASSWORD
-      #HTTPS_METHOD: redirect
-      CERT_NAME: $SS_CERT_NAME
-      VIRTUAL_PORT: 8088
+      MAPBOX_API_KEY: "$MAPBOX_API_KEY"
+      POSTGRES_PASSWORD: "$POSTGRES_PASSWORD"
     depends_on:
       - redis
       - postgres
-#    links:
-#      - postgres:postgres
-#      - redis:redis
+      - traefik
 
   redis:
     image: redis
@@ -57,6 +55,7 @@ services:
       - redis:/data
     networks:
       - default
+      - webservices
   
   postgres:
     image: library/postgres
@@ -64,15 +63,13 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: $SS_POSTGRES_DB
-      POSTGRES_PASSWORD: $SS_POSTGRES_PASSWORD
-      POSTGRES_USER: $SS_POSTGRES_USER
+      POSTGRES_DB: "$POSTGRES_DB"
+      POSTGRES_PASSWORD: "$POSTGRES_PASSWORD"
+      POSTGRES_USER: "$POSTGRES_USER"
     volumes:
       - ./postgres/data/:/var/lib/postgresql/data/
-      - ./postgres/docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d/
     networks:
-      - default
-#      - privatenet
+      - webservices
 
   pgadmin:
     image: chorss/docker-pgadmin4
@@ -84,14 +81,32 @@ services:
     volumes:
       - ./pgadmin/data:/data/chorss/docker-pgadmin4
     networks:
-      - default
-#      - privatenet
+      - webservices
 
-#networks:
-#  privatenet:
-#  webproxy:
-#    external:
-#      name: webproxy
+  traefik:
+    image: traefik:1.5-alpine
+    restart: on-failure
+    container_name: traefik
+    hostname: traefik
+    networks:
+      - default
+      - webservices
+    ports:
+      - "8080:8080"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik.toml:/traefik.toml
+      - ./acme:/etc/traefik/acme
+      - ./log:/log
+
+
+
+networks:
+  webservices:
+    external: false
+    
 volumes:
   redis:
     external: false

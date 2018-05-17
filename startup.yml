@@ -1,0 +1,31 @@
+#cloud-config
+# create default user
+users:
+  - name: dms
+    shell: /bin/bash
+    gecos: Data Manager
+    groups: docker
+    
+# update system
+resize_rootfs: True
+package_upgrade: True
+package_reboot_if_required: True
+
+write_files:
+  - path: /home/dms/run.sh
+    owner: dms:dms
+    permissions: 0777
+    content: |
+      #!/bin/bash
+      set -e
+      git clone https://github.com/mlgrm/dms
+      cd dms
+      curl -H 'Metadata-Flavor: Google' \
+          http://metadata.google.internal/computeMetadata/v1/instance/attributes/env \
+          -o .env
+      docker run docker/compose:1.21.2 up
+      docker exec superset superset-demo --quiet
+    
+# get files
+runcmd:
+  - [ su, -c, "./run.sh", -, dms ]
