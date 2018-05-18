@@ -23,9 +23,13 @@ write_files:
       curl -H 'Metadata-Flavor: Google' \
           http://metadata.google.internal/computeMetadata/v1/instance/attributes/env \
           -o .env
-      docker run docker/compose:1.21.2 up
+      docker run \
+        -v "/var/run/docker.sock:/var/run/docker.sock" \
+        -v "$PWD:/$PWD" \
+        -w="/$PWD" \
+        docker/compose:1.21.2 up
       docker exec superset superset-demo --quiet
     
 # get files
 runcmd:
-  - [ su, -c, "./run.sh", -, dms ]
+  - [ su, -c, ". run.sh", -, dms ]

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 set -e
 
 # make it interactive by default
@@ -14,17 +14,21 @@ fi
 
 # see if this ip address name is reserved and if it's in use warn the user
 # otherwise, just delete it.
-ADDR_LINE=$(grep "^dms-$INSTANCE_NAME\s");
-if ![ -z "$ADDR_LINE"]; then
-  if $(echo $ADDR_LINE | awk '{print $4}') = "IN_USE"; then
+ADDR_LINE=$(gcloud compute addresses list | \
+	grep "^dms-$INSTANCE_NAME\s" || \
+	echo"")
+if ! [ -z "$ADDR_LINE"] ; then
+  if $(echo $ADDR_LINE | awk '{print $4}') = "IN_USE" ; then
     echo "this address ($(echo $ADDR_LINE | awk '{print $1}')) is being used by another   instance. press ctrl-C to abort or return to continue."
     read
+    gcloud compute addresses delete "dms-$INSTANCE_NAME"
+    gcloud compute addresses create "dms-$INSTANCE_NAME"
     fi
-  gcloud compute addresses delete "dms-$INSTANCE_NAME"
-fi
-
+else
 # create a new static ip.
 gcloud compute addresses create "dms-$INSTANCE_NAME" --region europe-west3
+fi
+
 
 # the ip address is the third field in the line that starts with dms-$INSTANCE_NAME
 IP_ADDRESS=$(gcloud compute addresses list | \
