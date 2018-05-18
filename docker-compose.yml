@@ -35,8 +35,8 @@ services:
     ports:
       - "8088"
     volumes: # these need to be owned by uid 1000
-      - ./superset/superset_config.py:/etc/superset/superset_config.py
-      - ./superset/data/:/var/lib/superset/
+      - ./superset_config.py:/etc/superset/superset_config.py
+      - superset:/var/lib/superset/
     networks:
       - webservices
     environment:
@@ -68,7 +68,7 @@ services:
       POSTGRES_PASSWORD: "$POSTGRES_PASSWORD"
       POSTGRES_USER: "$POSTGRES_USER"
     volumes:
-      - ./postgres/data/:/var/lib/postgresql/data/
+      - postgres:/var/lib/postgresql/data/
     networks:
       - webservices
 
@@ -80,7 +80,7 @@ services:
       UID: 1000
       GID: 1000
     volumes:
-      - ./pgadmin/data:/data/chorss/docker-pgadmin4
+      - pgadmin:/data/chorss/docker-pgadmin4
     networks:
       - webservices
 
@@ -100,7 +100,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./traefik.toml:/traefik.toml
       - ./acme:/etc/traefik/acme
-      - ./log:/log
+      - ./traefic.log:/log
 
 
 
@@ -109,5 +109,8 @@ networks:
     external: false
     
 volumes:
+  postgres:
+  pgadmin:
+  superset:
   redis:
     external: false
