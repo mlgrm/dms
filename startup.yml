@@ -17,19 +17,22 @@ write_files:
     permissions: 0777
     content: |
       #!/bin/bash
+      set -x
       set -e
       git clone https://github.com/mlgrm/dms
       cd dms
       curl -H 'Metadata-Flavor: Google' \
           http://metadata.google.internal/computeMetadata/v1/instance/attributes/env \
           -o .env
-      docker run \
+      alias docker-compose="docker run \
         -v "/var/run/docker.sock:/var/run/docker.sock" \
         -v "$PWD:/$PWD" \
         -w="/$PWD" \
-        docker/compose:1.21.2 up
+        docker/compose:1.21.2"
+      docker-compose up -d
+      sleep 15
       docker exec superset superset-demo --quiet
     
 # get files
 runcmd:
-  - [ su, -c, ". run.sh", -, dms ]
+  - [ su, -c, "/bin/bash run.sh", -, dms ]

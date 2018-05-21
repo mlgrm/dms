@@ -18,8 +18,8 @@ services:
     #command: apachectl -DFOREGROUND
     networks:
       - webservices
-    volumes:
-      - ./rstudio.conf:/etc/apache2/sites-enabled/rstudio.conf
+#    volumes:
+#      - rstudio_conf:/etc/apache2/sites-enabled/rstudio.conf
     environment:
       POSTGRES_PASSWORD: "$POSTGRES_PASSWORD"
 
