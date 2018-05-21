@@ -3,6 +3,7 @@ services:
   ocpu:
     restart: on-failure
     image: mlgrm/dms-ocpu
+    container_name: rserver
     labels:
       traefik.enable: 'true'
       traefik.frontend.rule: "Host:$RSERVER_DOMAIN_NAME"
@@ -59,6 +60,7 @@ services:
       - webservices
   
   postgres:
+    container_name: postgres
     image: library/postgres
     restart: always
     ports:
@@ -73,9 +75,16 @@ services:
       - webservices
 
   pgadmin:
+    container_name: pgadmin
     image: chorss/docker-pgadmin4
     ports:
       - "5050:5050"
+    labels:
+      traefik.enable: 'true'
+      traefik.frontend.rule: "Host:$PGADMIN_DOMAIN_NAME"
+      traefik.port: '8080'
+      traefik.docker.network: "proxynet"
+      traefik.frontend.entryPoints: "http,https"
     environment:
       UID: 1000
       GID: 1000
@@ -85,6 +94,7 @@ services:
       - webservices
 
   traefik:
+    container_name: traefik
     image: traefik:1.5-alpine
     restart: on-failure
     container_name: traefik
