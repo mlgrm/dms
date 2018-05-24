@@ -7,7 +7,7 @@ services:
     labels:
       traefik.enable: 'true'
       traefik.frontend.rule: "Host:$RSERVER_DOMAIN_NAME"
-      traefik.port: '8080'
+      traefik.port: '8004'
       traefik.docker.network: "proxynet"
       traefik.frontend.entryPoints: "http,https"
     ports:
@@ -30,7 +30,7 @@ services:
     labels:
       traefik.enable: 'true'
       traefik.frontend.rule: "Host:$SUPERSET_DOMAIN_NAME"
-      traefik.port: '8080'
+      traefik.port: '8088'
       traefik.docker.network: "proxynet"
       traefik.frontend.entryPoints: "http,https"
     ports:
@@ -43,6 +43,7 @@ services:
     environment:
       MAPBOX_API_KEY: "$MAPBOX_API_KEY"
       POSTGRES_PASSWORD: "$POSTGRES_PASSWORD"
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
     depends_on:
       - redis
       - postgres
@@ -82,7 +83,7 @@ services:
     labels:
       traefik.enable: 'true'
       traefik.frontend.rule: "Host:$PGADMIN_DOMAIN_NAME"
-      traefik.port: '8080'
+      traefik.port: '5050'
       traefik.docker.network: "proxynet"
       traefik.frontend.entryPoints: "http,https"
     environment:
