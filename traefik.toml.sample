@@ -1,0 +1,49 @@
+##############
+debug = true
+logLevel = "ERROR"
+[traefikLog]
+  filePath = "log/traefik.log"
+[accessLog]
+  filePath = "log/access.log"
+
+
+ defaultEntryPoints = ["http", "https"]     # defaultEntryPoints must be at the top because it should not be in any table below
+
+ #[retry]
+ #attempts = 3
+
+ [api]
+ entryPoint = "traefik"
+ dashboard = true
+
+ # Entrypoints, http and https
+ [entryPoints]
+   [entryPoints.http]                   # http should be redirected to https
+   address = ":80"
+     [entryPoints.http.redirect]
+       entryPoint = "https"              # https is the default
+   [entryPoints.https]
+   address = ":443"
+     [entryPoints.https.tls]
+   [entryPoints.traefik]
+     address = ":8080"
+   [entryPoints.traefik.auth.basic]
+        users = ["admin:<MD5>"] # Passwords are encoded in MD5: you can use htpasswd to generate them. https://docs.traefik.io/user-guide/examples/#enable-basic-authentication-in-an-entry-point
+
+# Enable ACME (Let's Encrypt): automatic SSL
+[acme]
+  # caServer = "https://acme-staging.api.letsencrypt.org/directory"
+  email = "<EMAIL>"
+  storage = "/etc/traefik/acme/acme.json"
+  entryPoint = "https"
+  onHostRule = true
+  onDemand = false
+  [acme.httpChallenge]
+    entryPoint = "http"
+
+[docker]
+  endpoint = "unix:///var/run/docker.sock"
+  domain = "<DOMAIN>"
+  watch = true
+  exposedbydefault = false                # tells Traefik to only include containers with the label traefik.enable=true
+##############
