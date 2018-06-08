@@ -112,8 +112,10 @@ services:
       - ./traefik.toml:/traefik.toml
       - ./acme:/etc/traefik/acme
       - ./traefic.log:/log
-
-
+    command:
+      - "--docker.domain=$TRAEFIK_DOMAIN",
+      - "--acme.email=$ACME_EMAIL",
+      - "--entrypoint=Auth.Basic.Users:admin:$TRAEFIK_PASSWORD"
 
 networks:
   webservices:

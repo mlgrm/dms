@@ -28,12 +28,11 @@ logLevel = "ERROR"
    [entryPoints.traefik]
      address = ":8080"
    [entryPoints.traefik.auth.basic]
-        users = ["admin:<MD5>"] # Passwords are encoded in MD5: you can use htpasswd to generate them. https://docs.traefik.io/user-guide/examples/#enable-basic-authentication-in-an-entry-point
+    # users = ["admin:XXXXXXXXX"]
 
 # Enable ACME (Let's Encrypt): automatic SSL
 [acme]
   # caServer = "https://acme-staging.api.letsencrypt.org/directory"
-  email = "<EMAIL>"
   storage = "/etc/traefik/acme/acme.json"
   entryPoint = "https"
   onHostRule = true
@@ -43,7 +42,7 @@ logLevel = "ERROR"
 
 [docker]
   endpoint = "unix:///var/run/docker.sock"
-  domain = "<DOMAIN>"
+  #domain = "dimas.bigend.org"
   watch = true
   exposedbydefault = false                # tells Traefik to only include containers with the label traefik.enable=true
 ##############
