@@ -44,6 +44,9 @@ services:
       MAPBOX_API_KEY: "$MAPBOX_API_KEY"
       POSTGRES_PASSWORD: "$POSTGRES_PASSWORD"
       SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
+      GOOGLE_AUTH_WHITELIST: ${GOOGLE_AUTH_WHITELIST}
+      GOOGLE_AUTH_KEY: ${GOOGLE_AUTH_KEY}
+      GOOGLE_AUTH_SECRET: ${GOOGLE_AUTH_SECRET}
     depends_on:
       - redis
       - postgres
@@ -96,7 +99,7 @@ services:
 
   traefik:
     container_name: traefik
-    image: traefik:1.5-alpine
+    image: traefik:1.6-alpine
     restart: on-failure
     container_name: traefik
     hostname: traefik
