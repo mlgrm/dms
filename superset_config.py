@@ -73,4 +73,3 @@ OAUTH_PROVIDERS = [
         }
     }
 ]
-`.
