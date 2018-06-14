@@ -47,9 +47,15 @@ WTF_CSRF_ENABLED = True
 WTF_CSRF_EXEMPT_LIST = []
 
 #
+# Parse whitelist
+#
+RAW_AUTH_WHITE = os.getenv('GOOGLE_AUTH_WHITELIST','').replace('"', '');
+GAUTH_WHITELIST = RAW_AUTH_WHITE.split(',');
+
+#
 # Google oAuth
 #
-#CSRF_ENABLED = True
+CSRF_ENABLED = True
 
 AUTH_TYPE = AUTH_OAUTH
 AUTH_USER_REGISTRATION = True
@@ -57,7 +63,7 @@ AUTH_USER_REGISTRATION_ROLE = "Public"
 OAUTH_PROVIDERS = [
     {
       'name': 'google',
-      'whitelist': os.getenv('GOOGLE_AUTH_WHITELIST',''),
+      'whitelist': GAUTH_WHITELIST,
       'icon': 'fa-google',
       'token_key': 'access_token',
       'remote_app': {
