@@ -8,18 +8,19 @@ services:
       traefik.enable: 'true'
       traefik.frontend.rule: "Host:$RSERVER_DOMAIN_NAME"
       traefik.port: '8004'
+      traefik.port: '80'
       traefik.docker.network: "proxynet"
       traefik.frontend.entryPoints: "http,https"
     ports:
-      - "8787"
       - "8004"
+      - "80"
       
     hostname: ocpu
     #command: apachectl -DFOREGROUND
     networks:
       - webservices
-#    volumes:
-#      - rstudio_conf:/etc/apache2/sites-enabled/rstudio.conf
+    volumes:
+      - rstudio.conf:/etc/apache2/sites-enabled/rstudio.conf
     environment:
       POSTGRES_PASSWORD: "$POSTGRES_PASSWORD"
 
